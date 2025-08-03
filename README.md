@@ -1,8 +1,8 @@
 # freetype-binaries
 
-![GitHub Actions Status](https://github.com/<your-username>/freetype-binaries/workflows/FreeType%20Submodule%20Auto-Updater/badge.svg)
-![GitHub Actions Status](https://github.com/<your-username>/freetype-binaries/workflows/Build%20FreeType%20Multi-Platform/badge.svg)
-![GitHub Release](https://img.shields.io/github/v/release/<your-username>/freetype-binaries?include_prereleases)
+![GitHub Actions Status](https://github.com/KaranocaVe/freetype-binaries/workflows/FreeType%20Submodule%20Auto-Updater/badge.svg)
+![GitHub Actions Status](https://github.com/KaranocaVe/freetype-binaries/workflows/Build%20FreeType%20Multi-Platform/badge.svg)
+![GitHub Release](https://img.shields.io/github/v/release/KaranocaVe/freetype-binaries?include_prereleases)
 
 This repository provides pre-compiled binaries of the FreeType library for multiple platforms.
 
