@@ -40,6 +40,3 @@ This repository is powered by two core GitHub Actions workflows:
 This repository and its distributed binaries are subject to the FreeType library's licensing. Every release includes the `FTL.TXT` and `GPLv2.TXT` files for users to choose from.
 
 Please refer to the `LICENSE.TXT` file for more details.
-
----
-**Note**: Be sure to replace `<your-username>` with your GitHub username.
