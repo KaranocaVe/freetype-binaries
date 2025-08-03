@@ -11,20 +11,50 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          # 使用 GITHUB_TOKEN 的 write 权限
           token: ${{ secrets.GITHUB_TOKEN }}
+      
+      # 这一步将作为基准版本，即“旧版本”
+      - name: Get current FreeType version from submodule
+        id: get_current_version
+        run: |
+          # 确保子模块存在，如果不存在，checkout@v4 submodules:true 也会拉取
+          # 但为了保险，我们在这里确保它存在。
+          if [ ! -d "freetype" ]; then
+            git submodule update --init freetype
+          fi
+          CURRENT_VERSION=$(head -n 1 freetype/README | grep -oE '([0-9]+\.[0-9]+\.[0-9]+)')
+          echo "CURRENT_VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
 
-      - name: Update submodule
+      # 更新子模块到最新版本，但不进行提交
+      - name: Update submodule to latest
         run: git submodule update --remote --recursive
 
-      - name: Commit and push if there are changes
+      # 检查更新后的版本号，并与旧版本进行对比
+      - name: Check for new FreeType version
+        id: check_new_version
         run: |
-          if [[ -n "$(git status --porcelain)" ]]; then
-            git config --global user.name "github-actions[bot]"
-            git config --global user.email "github-actions[bot]@users.noreply.github.com"
-            git add .
-            git commit -m "chore: Update FreeType submodule"
-            git push
-            echo "::notice::FreeType submodule updated. A new build will be triggered."
+          # 获取更新后子模块的 README 中的版本号
+          NEW_VERSION=$(head -n 1 freetype/README | grep -oE '([0-9]+\.[0-9]+\.[0-9]+)')
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+
+          echo "Current FreeType version: ${{ env.CURRENT_VERSION }}"
+          echo "New FreeType version: ${{ env.NEW_VERSION }}"
+
+          if [[ "${{ env.CURRENT_VERSION }}" == "$NEW_VERSION" ]]; then
+            echo "::notice::版本号没有变化，无需推送更新。"
+            echo "version_updated=false" >> $GITHUB_OUTPUT
           else
-            echo "::notice::FreeType submodule is already up-to-date. No new build needed."
+            echo "::notice::检测到版本号已更新，准备推送子模块更新。"
+            echo "version_updated=true" >> $GITHUB_OUTPUT
           fi
+
+      - name: Commit and push changes
+        if: steps.check_new_version.outputs.version_updated == 'true'
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add freetype
+          git commit -m "chore: Update FreeType submodule to v${{ env.NEW_VERSION }}"
+          git push
+          echo "子模块已更新并推送。"

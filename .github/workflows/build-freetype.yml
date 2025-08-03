@@ -100,7 +100,7 @@ jobs:
       - name: Get FreeType Version from submodule README
         id: get_version
         run: |
-          VERSION=$(head -n 1 freetype/README.md | grep -oE '([0-9]+\.[0-9]+\.[0-9]+)')
+          VERSION=$(head -n 1 freetype/README | grep -oE '([0-9]+\.[0-9]+\.[0-9]+)')
           echo "VERSION=$VERSION" >> $GITHUB_ENV
       
       - name: Download Windows Artifact
