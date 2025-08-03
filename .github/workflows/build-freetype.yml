@@ -1,0 +1,89 @@
+name: Build FreeType Multi-Platform
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    name: Build on Windows
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository with submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+
+      - name: Configure CMake
+        run: |
+          cd freetype
+          mkdir build
+          cd build
+          cmake .. -G "Visual Studio 17 2022" -D BUILD_SHARED_LIBS=ON
+
+      - name: Build FreeType DLL
+        run: cmake --build freetype/build --config Release
+
+      - name: Upload DLL as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: freetype-windows
+          path: freetype/build/bin/Release/freetype.dll
+
+  build-macos:
+    name: Build on macOS
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository with submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+
+      - name: Configure CMake
+        run: |
+          cd freetype
+          mkdir build
+          cd build
+          cmake .. -D BUILD_SHARED_LIBS=ON
+
+      - name: Build FreeType dynamic library
+        run: cmake --build freetype/build --config Release
+
+      - name: Upload dylib as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: freetype-macos
+          path: freetype/build/libfreetype.dylib
+
+  build-linux:
+    name: Build on Linux
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository with submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+
+      - name: Install build dependencies
+        run: sudo apt-get update && sudo apt-get install -y cmake build-essential
+
+      - name: Configure CMake
+        run: |
+          cd freetype
+          mkdir build
+          cd build
+          cmake .. -D BUILD_SHARED_LIBS=ON
+
+      - name: Build FreeType shared object
+        run: cmake --build freetype/build --config Release
+
+      - name: Upload so as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: freetype-linux
+          path: freetype/build/libfreetype.so
