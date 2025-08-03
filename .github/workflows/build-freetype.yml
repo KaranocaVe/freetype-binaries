@@ -5,60 +5,17 @@ on:
     branches:
       - main
   workflow_dispatch:
-  schedule:
-    - cron: '0 0 * * *'  # 每天 UTC 00:00 运行，用于检查更新
 
 jobs:
-  check-for-update:
-    name: Check FreeType Version
-    runs-on: ubuntu-latest
-    outputs:
-      version_updated: ${{ steps.version_check.outputs.version_updated }}
-      new_version: ${{ steps.version_check.outputs.new_version }}
-
-    steps:
-      - name: Checkout repository for version file
-        uses: actions/checkout@v4
-
-      - name: Get latest FreeType version
-        id: version_check
-        run: |
-          # 获取 FreeType README.md 的最新内容并提取版本号
-          CURRENT_VERSION=$(curl -s https://raw.githubusercontent.com/freetype/freetype/master/README.md | head -n 1 | grep -oE '([0-9]+\.[0-9]+\.[0-9]+)')
-
-          # 尝试从仓库的 Tag 中获取上次构建的版本号
-          # 假设你的 Release Tag 格式是 freetype-vX.Y.Z
-          LAST_VERSION=$(git tag -l "freetype-v*" --sort=creatordate | tail -n 1 | sed 's/freetype-v//')
-          
-          if [[ -z "$LAST_VERSION" ]]; then
-            LAST_VERSION="0.0.0" # 如果没有找到上个版本，则默认为 '0.0.0'
-          fi
-
-          echo "Current FreeType version: $CURRENT_VERSION"
-          echo "Last built version: $LAST_VERSION"
-
-          if [[ "$CURRENT_VERSION" == "$LAST_VERSION" ]]; then
-            echo "版本号没有变化，无需构建。"
-            echo "version_updated=false" >> $GITHUB_OUTPUT
-            echo "new_version=" >> $GITHUB_OUTPUT
-          else
-            echo "版本号已更新，准备构建。"
-            echo "version_updated=true" >> $GITHUB_OUTPUT
-            echo "new_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
-          fi
-
   build-windows:
     name: Build on Windows
-    needs: check-for-update # 依赖于版本检查 Job
-    if: needs.check-for-update.outputs.version_updated == 'true' # 只有版本更新才执行
     runs-on: windows-latest
-
     steps:
       - name: Checkout repository with submodules
         uses: actions/checkout@v4
         with:
           submodules: 'true'
-
+      
       - name: Configure CMake
         run: |
           cd freetype
@@ -77,16 +34,13 @@ jobs:
 
   build-macos:
     name: Build on macOS
-    needs: check-for-update # 依赖于版本检查 Job
-    if: needs.check-for-update.outputs.version_updated == 'true' # 只有版本更新才执行
     runs-on: macos-latest
-
     steps:
       - name: Checkout repository with submodules
         uses: actions/checkout@v4
         with:
           submodules: 'true'
-
+      
       - name: Configure CMake
         run: |
           cd freetype
@@ -105,16 +59,13 @@ jobs:
 
   build-linux:
     name: Build on Linux
-    needs: check-for-update # 依赖于版本检查 Job
-    if: needs.check-for-update.outputs.version_updated == 'true' # 只有版本更新才执行
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository with submodules
         uses: actions/checkout@v4
         with:
           submodules: 'true'
-
+      
       - name: Install build dependencies
         run: sudo apt-get update && sudo apt-get install -y cmake build-essential
 
@@ -136,12 +87,22 @@ jobs:
 
   create-release:
     name: Create GitHub Release
-    needs: [build-windows, build-macos, build-linux] # 依赖于所有构建 Job
-    # 只有所有依赖 Job 都成功，并且版本有更新才执行
-    if: success() && needs.check-for-update.outputs.version_updated == 'true'
+    needs: [build-windows, build-macos, build-linux]
+    if: success()
     runs-on: ubuntu-latest
-
     steps:
+      # 以下步骤用于获取新版本号
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+      
+      - name: Get FreeType Version from submodule README
+        id: get_version
+        run: |
+          VERSION=$(head -n 1 freetype/README.md | grep -oE '([0-9]+\.[0-9]+\.[0-9]+)')
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+      
       - name: Download Windows Artifact
         uses: actions/download-artifact@v4
         with:
@@ -163,13 +124,12 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          # 从 check-for-update Job 获取新版本号
-          tag_name: freetype-v${{ needs.check-for-update.outputs.new_version }}
-          name: FreeType v${{ needs.check-for-update.outputs.new_version }} Binaries
+          tag_name: freetype-v${{ env.VERSION }}
+          name: FreeType v${{ env.VERSION }} Binaries
           body: |
             This release contains pre-built FreeType binaries for Windows, macOS, and Linux.
             
-            Based on FreeType version: ${{ needs.check-for-update.outputs.new_version }}
+            Based on FreeType version: ${{ env.VERSION }}
             
             **Included files:**
             - Windows DLL: `freetype.dll`
