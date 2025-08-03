@@ -17,7 +17,7 @@ Using an automated CI/CD workflow, this repository ensures that when the officia
 
 ### How to Use
 
-You can download the latest pre-compiled binaries from the [GitHub Releases](https://github.com/<your-username>/freetype-binaries/releases) page.
+You can download the latest pre-compiled binaries from the [GitHub Releases](https://github.com/KaranocaVe/freetype-binaries/releases) page.
 
 Simply download the `Source code (zip)` from the latest Release page, or directly download the specific `.dll`, `.dylib`, or `.so` files you need.
 
