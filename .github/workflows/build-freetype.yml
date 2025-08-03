@@ -87,7 +87,7 @@ jobs:
 
   create-release:
     name: Create GitHub Release
-    needs: [build-windows, build-macos, build-linux]
+    needs: [build-windows, build-macos, build-linux] # 依赖于所有构建 Job
     if: success()
     runs-on: ubuntu-latest
     permissions:
@@ -97,18 +97,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          submodules: 'true'
+          submodules: 'true' # 确保拉取子模块，以便读取 README.md
 
+      - name: Get FreeType Version from submodule README
+        id: get_version # 为这个步骤设置 ID，以便后续步骤访问其输出
+        run: |
+          # 从本地已检出的子模块中读取版本号
+          VERSION=$(head -n 1 freetype/README | grep -oE '([0-9]+\.[0-9]+\.[0-9]+)')
+          echo "FreeType Version: $VERSION"
+          # 将版本号设置为 Job 的输出，以便在 with: 中使用
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+      
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: ./artifacts
 
-      # 新增步骤：下载 FreeType 许可文档
       - name: Download FreeType License Files
         run: |
           mkdir -p ./licenses
-          # 这里我们从本地子模块中复制许可文档
           cp freetype/LICENSE.TXT ./licenses/
           cp freetype/docs/FTL.TXT ./licenses/
           cp freetype/docs/GPLv2.TXT ./licenses/
@@ -116,12 +123,13 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: freetype-v${{ needs.check-for-update.outputs.new_version }}
-          name: FreeType v${{ needs.check-for-update.outputs.new_version }} Binaries
+          # 现在从 get_version 步骤的输出中获取版本号
+          tag_name: freetype-v${{ steps.get_version.outputs.version }}
+          name: FreeType v${{ steps.get_version.outputs.version }} Binaries
           body: |
             This release contains pre-built FreeType binaries for Windows, macOS, and Linux.
             
-            Based on FreeType version: ${{ needs.check-for-update.outputs.new_version }}
+            Based on FreeType version: ${{ steps.get_version.outputs.version }}
             
             **Included files:**
             - Windows DLL: `freetype.dll`
