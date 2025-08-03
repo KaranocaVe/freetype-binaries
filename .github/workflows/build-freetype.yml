@@ -90,54 +90,48 @@ jobs:
     needs: [build-windows, build-macos, build-linux]
     if: success()
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # 授予创建 Release 所需的写权限
+      
     steps:
-      # 以下步骤用于获取新版本号
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          submodules: 'true'
       
-      - name: Get FreeType Version from submodule README
-        id: get_version
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      # 新增步骤：下载 FreeType 许可文档
+      - name: Download FreeType License Files
         run: |
-          VERSION=$(head -n 1 freetype/README | grep -oE '([0-9]+\.[0-9]+\.[0-9]+)')
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-      
-      - name: Download Windows Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: freetype-windows-dll
-          path: ./artifacts/windows
-
-      - name: Download macOS Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: freetype-macos-dylib
-          path: ./artifacts/macos
-
-      - name: Download Linux Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: freetype-linux-so
-          path: ./artifacts/linux
+          mkdir -p ./licenses
+          # 这里我们从本地子模块中复制许可文档
+          cp freetype/LICENSE.TXT ./licenses/
+          cp freetype/docs/FTL.TXT ./licenses/
+          cp freetype/docs/GPLv2.TXT ./licenses/
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: freetype-v${{ env.VERSION }}
-          name: FreeType v${{ env.VERSION }} Binaries
+          tag_name: freetype-v${{ needs.check-for-update.outputs.new_version }}
+          name: FreeType v${{ needs.check-for-update.outputs.new_version }} Binaries
           body: |
             This release contains pre-built FreeType binaries for Windows, macOS, and Linux.
             
-            Based on FreeType version: ${{ env.VERSION }}
+            Based on FreeType version: ${{ needs.check-for-update.outputs.new_version }}
             
             **Included files:**
             - Windows DLL: `freetype.dll`
             - macOS Dynamic Library: `libfreetype.dylib`
             - Linux Shared Object: `libfreetype.so`
+            - **License files**
           files: |
-            ./artifacts/windows/freetype.dll
-            ./artifacts/macos/libfreetype.dylib
-            ./artifacts/linux/libfreetype.so
+            ./artifacts/freetype-windows-dll/freetype.dll
+            ./artifacts/freetype-macos-dylib/libfreetype.dylib
+            ./artifacts/freetype-linux-so/libfreetype.so
+            ./licenses/LICENSE.TXT
+            ./licenses/FTL.TXT
+            ./licenses/GPLv2.TXT
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
