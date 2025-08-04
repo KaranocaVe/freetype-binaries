@@ -3,7 +3,8 @@ name: FreeType Submodule Auto-Updater
 on:
   schedule:
     - cron: '0 0 * * *'  # 每天 UTC 00:00 运行
-
+  workflow_dispatch:
+    
 jobs:
   update:
     runs-on: ubuntu-latest
