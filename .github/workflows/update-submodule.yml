@@ -11,8 +11,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          # 使用 GITHUB_TOKEN 的 write 权限
-          token: ${{ secrets.GITHUB_TOKEN }}
           submodules: 'true'
       
       # 这一步将作为基准版本，即“旧版本”
