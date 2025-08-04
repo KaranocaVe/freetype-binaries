@@ -13,6 +13,7 @@ jobs:
         with:
           # 使用 GITHUB_TOKEN 的 write 权限
           token: ${{ secrets.GITHUB_TOKEN }}
+          submodules: 'true'
       
       # 这一步将作为基准版本，即“旧版本”
       - name: Get current FreeType version from submodule
