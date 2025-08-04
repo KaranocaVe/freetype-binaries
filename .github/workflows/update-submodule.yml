@@ -4,7 +4,7 @@ on:
   schedule:
     - cron: '0 0 * * *'  # 每天 UTC 00:00 运行
   workflow_dispatch:
-    
+
 jobs:
   update:
     runs-on: ubuntu-latest
@@ -23,7 +23,7 @@ jobs:
           if [ ! -d "freetype" ]; then
             git submodule update --init freetype
           fi
-          ll
+          ls
           CURRENT_VERSION=$(head -n 1 freetype/README | grep -oE '([0-9]+\.[0-9]+\.[0-9]+)')
           echo "CURRENT_VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
 
