@@ -24,6 +24,7 @@ jobs:
           if [ ! -d "freetype" ]; then
             git submodule update --init freetype
           fi
+          ll
           CURRENT_VERSION=$(head -n 1 freetype/README | grep -oE '([0-9]+\.[0-9]+\.[0-9]+)')
           echo "CURRENT_VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
 
